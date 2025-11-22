@@ -329,9 +329,9 @@ def train_model():
             '-m', model_dir,
             '-t', 'original',
             '-b', '16',
-            '-it', str(iterations),
+            '-i', str(iterations),  # Updated from -it to -i
             '-s', '100',
-            '-ss', '1000',
+            '-I', '1000',  # Updated from -ss to -I (snapshot-interval)
             '-ps', '100'
         ]
         
