@@ -75,6 +75,40 @@ Models download होते हैं `models/` directory में।
    - Changed `-bs` to `-b` in train command (deprecated parameter fixed)
    - Face swap now fully functional without errors
 
+### Production-Level Error Handling (Nov 22, 2025)
+Implemented comprehensive error handling and validation across all endpoints:
+
+**Extract Endpoint Improvements:**
+- Session existence validation before processing
+- File existence and size validation (detect empty files)
+- Better file type detection for images vs videos
+- Detailed error messages for corrupted or unsupported files
+- Face count validation (returns error if no faces detected)
+- Specific timeout handling with helpful messages
+
+**Train Endpoint Improvements:**
+- Pre-flight validation of session and directories
+- Face count validation for both source and target
+- Prevention of duplicate training sessions
+- Detailed logging of face counts before training
+- Better status tracking (starting → training → completed/failed)
+- Clear error messages for missing or empty face directories
+
+**Convert Endpoint Improvements:**
+- Comprehensive training status validation
+- Model file existence verification
+- Target file validation before conversion
+- Better output file detection and validation
+- Detailed success/failure messages
+- Timeout handling for large files
+
+**Overall Improvements:**
+- All errors now include helpful "details" field
+- Consistent error response format
+- Comprehensive logging at every step
+- Zero possibility of unclear errors
+- Production-ready error handling
+
 ### Bug Fixes (Nov 22, 2025)
 1. **Critical Fix**: Extraction bug fixed जहां output directory creation file finding से पहले हो रहा था, जिससे extraction empty folder पर run हो रहा था
 2. **Training Status**: Training status initialization improved to avoid "not_found" transient states
