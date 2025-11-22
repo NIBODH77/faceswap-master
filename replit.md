@@ -31,11 +31,13 @@
 ### Dependencies
 Core dependencies installed:
 - `tensorflow-cpu>=2.16.0` - Deep learning framework (updated for Python 3.12)
+- `insightface` - State-of-the-art face analysis and swapping
+- `onnxruntime` - High-performance inference engine
 - `opencv-python` - Image processing
 - `flask` - Web framework
-- `numpy<2.0.0` - Numerical computing
-- `pillow<10.0.0` - Image handling
-- Additional ML libraries: scikit-learn, matplotlib, imageio
+- `numpy` - Numerical computing
+- `pillow` - Image handling
+- Additional ML libraries: scikit-learn, matplotlib, imageio, albumentations
 
 ### AI Models Auto-Download
 AI models को manually download करने की जरूरत नहीं है। वे automatically download होते हैं जब पहली बार use होते हैं:
@@ -51,10 +53,15 @@ Models download होते हैं `models/` directory में।
 
 **Two Options Available:**
 
-#### Option 1: Instant Swap (Quick, No Training)
+#### Option 1: Instant Swap (Professional Quality, No Training)
 1. **Upload**: User uploads source face और target media (image/video)
-2. **Instant Swap**: Direct face swap without training (fast but less accurate)
-3. **Download**: Result immediately available for download
+2. **Instant Swap**: High-quality face swap using state-of-the-art InsightFace models
+   - Buffalo_l face detection model (640x640 resolution)
+   - inswapper_128.onnx professional face swapping model
+   - Advanced color correction using LAB color space
+   - Seamless Poisson blending
+   - Face enhancement with denoising and sharpening
+3. **Download**: High-quality result immediately available
 
 #### Option 2: Train & Convert (Best Quality)
 1. **Upload**: User uploads source face और target media (image/video)
@@ -82,6 +89,53 @@ Models download होते हैं `models/` directory में।
 - `GET /training_status/<session_id>` - Check training progress
 - `POST /convert` - Convert target using trained model
 - `GET /download/<session_id>/<filename>` - Download result
+
+## Professional Face Swapping Upgrade (Nov 22, 2025)
+
+### Major Quality Improvements
+Upgraded from basic Haar Cascade to professional InsightFace system:
+
+**State-of-the-Art Models:**
+- **Buffalo_l** face detection (best quality, 640x640 resolution)
+- **inswapper_128.onnx** professional face swapping model
+- Automatic model download and caching
+
+**Advanced Processing:**
+1. **Face Enhancement:**
+   - Denoising with fastNlMeans
+   - Adaptive sharpening
+   - CLAHE histogram equalization
+
+2. **Color Correction:**
+   - LAB color space matching
+   - Masked statistical color transfer
+   - Zero-area mask protection
+
+3. **Seamless Blending:**
+   - Poisson image blending
+   - Gaussian mask smoothing
+   - Elliptical blend regions
+
+4. **GPU Support:**
+   - Automatic CUDA detection
+   - Graceful CPU fallback
+   - ONNX Runtime optimization
+
+### Additional Tools Created
+1. **dataset_downloader.py** - Download FFHQ/CelebA datasets
+   - FFHQ Thumbnails support (70,000 images)
+   - CelebA download instructions
+   - Sample dataset option
+
+2. **train_dataset_builder.py** - Streamlined training pipeline
+   - Removed unnecessary confirmation prompts
+   - Direct training workflow
+
+### Architecture Improvements
+- Robust error handling (zero-area masks, division-by-zero protection)
+- Production-ready code quality
+- Comprehensive logging
+- Architect-reviewed and approved
 
 ## Recent Changes
 
