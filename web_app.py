@@ -124,6 +124,8 @@ def extract_faces():
         input_file = files[0]
         
         # Run extraction
+        # Note: bisenet-fp mask will be stored as bisenet-fp_face or bisenet-fp_head
+        # depending on the mask configuration (include_hair setting)
         cmd = [
             sys.executable, 'faceswap.py', 'extract',
             '-i', input_file,
@@ -230,13 +232,15 @@ def convert_faces():
         target_file = target_files[0]
         
         # Run conversion
+        # Use 'extended' mask as it's always available and works well
+        # Alternative: use 'bisenet-fp_face' if you're sure the mask was generated with face centering
         cmd = [
             sys.executable, 'faceswap.py', 'convert',
             '-i', target_file,
             '-o', output_dir,
             '-m', model_dir,
             '-c', 'avg-color',
-            '-M', 'bisenet-fp_face',
+            '-M', 'extended',
             '-w', 'ffmpeg' if target_file.endswith(('.mp4', '.avi', '.mov', '.mkv')) else 'opencv'
         ]
         
