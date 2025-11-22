@@ -337,9 +337,11 @@
 
                 if (data.success) {
                     sessionId = data.session_id;
-                    showStatus('Files uploaded successfully! ✅ अब "तुरंत स्वैप करें" बटन पर क्लिक करें!', 'success');
-                    instantSwapBtn.disabled = false;  // Enable instant swap button
-                    hideProgress();
+                    showStatus('Files uploaded successfully! ✅', 'success');
+                    instantSwapBtn.disabled = false;
+                    
+                    updateProgress(20, 'Extracting faces from source...');
+                    await extractFaces();
                 } else {
                     showStatus('Error: ' + data.error, 'error');
                     hideProgress();
@@ -347,6 +349,44 @@
                 }
             } catch (error) {
                 showStatus('Upload failed: ' + error.message, 'error');
+                hideProgress();
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function extractFaces() {
+            try {
+                updateProgress(30, 'Extracting source faces... (this may take a minute)');
+                let extractResp = await fetch('/extract', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, file_type: 'source'})
+                });
+                let extractData = await extractResp.json();
+                if (!extractData.success) {
+                    throw new Error(`Source extraction failed: ${extractData.details || extractData.error}`);
+                }
+                sourceExtracted = true;
+                showStatus(`✓ Source: ${extractData.face_count} faces detected`, 'success');
+
+                updateProgress(60, 'Extracting target faces...');
+                extractResp = await fetch('/extract', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, file_type: 'target'})
+                });
+                extractData = await extractResp.json();
+                if (!extractData.success) {
+                    throw new Error(`Target extraction failed: ${extractData.details || extractData.error}`);
+                }
+                targetExtracted = true;
+
+                updateProgress(100, 'Face extraction complete! ✅');
+                showStatus(`✓ Faces extracted! Source: ${extractData.source_count || 'N/A'} faces, Target: ${extractData.face_count} faces. अब "मॉडल ट्रेन करें" पर क्लिक करें!`, 'success');
+                trainBtn.disabled = false;
+                hideProgress();
+            } catch (error) {
+                showStatus('Face extraction failed: ' + error.message, 'error');
                 hideProgress();
                 uploadBtn.disabled = false;
             }
@@ -399,6 +439,100 @@
             if (!sessionId) {
                 showStatus('Please upload files first', 'error');
                 return;
+            }
+
+            if (!sourceExtracted || !targetExtracted) {
+                showStatus('Please wait for face extraction to complete', 'error');
+                return;
+            }
+
+            trainBtn.disabled = true;
+            showProgress('Starting model training...');
+
+            try {
+                updateProgress(10, 'Initializing training...');
+                const trainResp = await fetch('/train', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, iterations: 5000})
+                });
+
+                const trainData = await trainResp.json();
+                if (!trainData.success) {
+                    throw new Error(`Training failed to start: ${trainData.details || trainData.error}`);
+                }
+
+                updateProgress(20, 'Training in progress... (this takes ~30 seconds)');
+                
+                let trainingComplete = false;
+                let waitTime = 0;
+                const maxWaitTime = 300000;
+                const checkInterval = 3000;
+
+                while (!trainingComplete && waitTime < maxWaitTime) {
+                    await new Promise(resolve => setTimeout(resolve, checkInterval));
+                    waitTime += checkInterval;
+
+                    const statusResp = await fetch(`/training_status/${sessionId}`);
+                    const statusData = await statusResp.json();
+
+                    if (statusData.status === 'completed') {
+                        trainingComplete = true;
+                        updateProgress(100, 'Training completed! ✅');
+                        showStatus('✓ Model training complete! अब "फेस स्वैप करें" पर क्लिक करें!', 'success');
+                        convertBtn.disabled = false;
+                        hideProgress();
+                    } else if (statusData.status === 'failed') {
+                        throw new Error(`Training failed: ${statusData.error || 'Unknown error'}`);
+                    } else {
+                        const progress = 20 + Math.min((waitTime / maxWaitTime) * 80, 70);
+                        updateProgress(Math.floor(progress), `Training... ${Math.floor(waitTime/1000)}s elapsed`);
+                    }
+                }
+
+                if (!trainingComplete) {
+                    throw new Error('Training timed out');
+                }
+            } catch (error) {
+                showStatus('Training failed: ' + error.message, 'error');
+                hideProgress();
+                trainBtn.disabled = false;
+            }
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            if (!sessionId) {
+                showStatus('Please upload files first', 'error');
+                return;
+            }
+
+            convertBtn.disabled = true;
+            showProgress('Converting faces...');
+
+            try {
+                updateProgress(50, 'Applying face swap...');
+                const convertResp = await fetch('/convert', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+
+                const convertData = await convertResp.json();
+
+                if (convertData.success) {
+                    updateProgress(100, 'Complete! 🎉');
+                    resultUrl = convertData.output_url;
+                    resultFilename = convertData.filename;
+                    showResult(resultUrl, resultFilename);
+                    showStatus('✓ Face swap successful! Download your result below.', 'success');
+                    hideProgress();
+                } else {
+                    throw new Error(convertData.details || convertData.error);
+                }
+            } catch (error) {
+                showStatus('Conversion failed: ' + error.message, 'error');
+                hideProgress();
+                convertBtn.disabled = false;
             }
         });
 
