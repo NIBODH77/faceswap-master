@@ -117,17 +117,21 @@ def extract_faces():
             return jsonify({'error': 'Session ID required'}), 400
         
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
-        input_file = os.path.join(session_dir, f'{file_type}_*')
-        output_dir = os.path.join(session_dir, f'{file_type}_faces')
         
-        os.makedirs(output_dir, exist_ok=True)
+        # Find the actual uploaded file (not directory) BEFORE creating output_dir
+        pattern = os.path.join(session_dir, f'{file_type}_*')
+        all_matches = glob.glob(pattern)
+        # Filter to get only files, not directories
+        files = [f for f in all_matches if os.path.isfile(f)]
         
-        # Find the actual file
-        files = glob.glob(input_file)
         if not files:
             return jsonify({'error': 'File not found'}), 404
         
         input_file = files[0]
+        
+        # Now create output directory after finding the input file
+        output_dir = os.path.join(session_dir, f'{file_type}_faces')
+        os.makedirs(output_dir, exist_ok=True)
         
         # Run extraction
         cmd = [
@@ -240,6 +244,9 @@ def train_model():
             '-ps', '100'
         ]
         
+        # Initialize training status BEFORE starting thread to avoid transient "not_found"
+        training_sessions[session_id] = {'status': 'starting', 'progress': 0}
+        
         # Start training in background thread
         thread = threading.Thread(target=run_training_background, args=(session_id, cmd))
         thread.daemon = True
@@ -291,12 +298,16 @@ def convert_faces():
         
         os.makedirs(output_dir, exist_ok=True)
         
-        # Find target file
-        target_files = glob.glob(os.path.join(session_dir, 'target_*'))
+        # Find target file (filter for actual files, not directories)
+        target_pattern = os.path.join(session_dir, 'target_*')
+        all_target_matches = glob.glob(target_pattern)
+        # Get only files that are not directories and don't end with _faces
+        target_files = [f for f in all_target_matches if os.path.isfile(f) and not f.endswith('_faces')]
+        
         if not target_files:
             return jsonify({'error': 'Target file not found'}), 404
         
-        target_file = [f for f in target_files if not f.endswith('_faces')][0]
+        target_file = target_files[0]
         
         # Run conversion
         cmd = [
