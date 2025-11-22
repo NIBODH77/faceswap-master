@@ -525,6 +525,66 @@ def download_result(session_id, filename):
         logger.error(f"Download error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/instant_swap', methods=['POST'])
+def instant_swap():
+    """Instant face swap without training (for single images)"""
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        blend_strength = data.get('blend_strength', 0.85)
+        
+        if not session_id:
+            return jsonify({'error': 'Session ID required'}), 400
+        
+        session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+        
+        if not os.path.exists(session_dir):
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Find source and target files
+        source_pattern = os.path.join(session_dir, 'source_*')
+        target_pattern = os.path.join(session_dir, 'target_*')
+        
+        source_files = [f for f in glob.glob(source_pattern) if os.path.isfile(f)]
+        target_files = [f for f in glob.glob(target_pattern) if os.path.isfile(f)]
+        
+        if not source_files or not target_files:
+            return jsonify({'error': 'Source or target file not found'}), 404
+        
+        source_path = source_files[0]
+        target_path = target_files[0]
+        
+        # Create output directory
+        output_dir = os.path.join(app.config['OUTPUT_FOLDER'], session_id)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        output_path = os.path.join(output_dir, 'instant_swapped.jpg')
+        
+        logger.info(f"Starting instant face swap for session {session_id}")
+        
+        # Import and use the instant swapper
+        from insightface_swapper import InsightFaceSwapper
+        swapper = InsightFaceSwapper()
+        
+        success = swapper.swap_faces(source_path, target_path, output_path, blend_strength)
+        
+        if not success:
+            return jsonify({
+                'error': 'Face swap failed',
+                'details': 'Could not detect or swap faces. Make sure both images contain clear frontal faces.'
+            }), 500
+        
+        return jsonify({
+            'success': True,
+            'output_url': url_for('download_result', session_id=session_id, filename='instant_swapped.jpg'),
+            'filename': 'instant_swapped.jpg',
+            'message': 'Instant face swap completed successfully! No training required.'
+        })
+    
+    except Exception as e:
+        logger.error(f"Instant swap error: {str(e)}")
+        return jsonify({'error': 'Unexpected error during instant swap', 'details': str(e)}), 500
+
 @app.route('/cleanup/<session_id>', methods=['POST'])
 def cleanup_session(session_id):
     """Clean up session files"""

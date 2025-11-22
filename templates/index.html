@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,14 +10,14 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -27,27 +26,27 @@
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        
+
         h1 {
             text-align: center;
             color: #667eea;
             margin-bottom: 10px;
             font-size: 2.5em;
         }
-        
+
         .subtitle {
             text-align: center;
             color: #666;
             margin-bottom: 40px;
         }
-        
+
         .upload-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
-        
+
         .upload-box {
             border: 3px dashed #667eea;
             border-radius: 15px;
@@ -57,27 +56,27 @@
             transition: all 0.3s;
             background: #f8f9ff;
         }
-        
+
         .upload-box:hover {
             border-color: #764ba2;
             background: #f0f2ff;
             transform: translateY(-5px);
         }
-        
+
         .upload-box h3 {
             color: #667eea;
             margin-bottom: 15px;
         }
-        
+
         .upload-box p {
             color: #666;
             margin-bottom: 20px;
         }
-        
+
         input[type="file"] {
             display: none;
         }
-        
+
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -90,17 +89,26 @@
             transition: all 0.3s;
             margin: 10px;
         }
-        
-        .btn:hover {
+
+        .btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-        
+
+        .btn.instant-swap {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn.instant-swap:hover:not(:disabled) {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .preview {
             max-width: 100%;
             max-height: 300px;
@@ -108,16 +116,16 @@
             border-radius: 10px;
             display: none;
         }
-        
+
         .preview.show {
             display: block;
         }
-        
+
         .actions {
             text-align: center;
             margin-top: 30px;
         }
-        
+
         .progress {
             width: 100%;
             height: 30px;
@@ -127,7 +135,7 @@
             margin: 20px 0;
             display: none;
         }
-        
+
         .progress-bar {
             height: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -139,7 +147,7 @@
             color: white;
             font-weight: bold;
         }
-        
+
         .status {
             text-align: center;
             padding: 15px;
@@ -147,38 +155,38 @@
             margin: 20px 0;
             display: none;
         }
-        
+
         .status.success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
+
         .status.error {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        
+
         .status.info {
             background: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
-        
+
         .result {
             text-align: center;
             margin-top: 30px;
             display: none;
         }
-        
+
         .result img, .result video {
             max-width: 100%;
             border-radius: 10px;
             margin-top: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        
+
         .file-info {
             display: none;
             margin-top: 10px;
@@ -187,7 +195,7 @@
             border-radius: 5px;
             color: #2e7d32;
         }
-        
+
         .file-info.show {
             display: block;
         }
@@ -197,7 +205,7 @@
     <div class="container">
         <h1>🎭 FaceSwap</h1>
         <p class="subtitle">आसानी से Image और Video में Face Swap करें</p>
-        
+
         <div class="upload-section">
             <div class="upload-box" onclick="document.getElementById('sourceFile').click()">
                 <h3>📸 Source Face</h3>
@@ -208,7 +216,7 @@
                 <img id="sourcePreview" class="preview">
                 <video id="sourceVideoPreview" class="preview" controls></video>
             </div>
-            
+
             <div class="upload-box" onclick="document.getElementById('targetFile').click()">
                 <h3>🎯 Target Media</h3>
                 <p>जिस Image/Video में Face Swap करना है</p>
@@ -219,18 +227,29 @@
                 <video id="targetVideoPreview" class="preview" controls></video>
             </div>
         </div>
-        
+
         <div class="actions">
             <button class="btn" id="uploadBtn" onclick="uploadFiles()" disabled>📤 Upload Files</button>
-            <button class="btn" id="processBtn" onclick="processSwap()" disabled>✨ Face Swap करें</button>
+            <button id="instantSwapBtn" class="btn instant-swap" disabled>
+                    <i class="fas fa-bolt"></i>
+                    तुरंत स्वैप करें (बिना ट्रेनिंग)
+                </button>
+                <button id="trainBtn" class="btn" disabled>
+                    <i class="fas fa-graduation-cap"></i>
+                    मॉडल ट्रेन करें
+                </button>
+                <button id="convertBtn" class="btn" disabled>
+                    <i class="fas fa-magic"></i>
+                    फेस स्वैप करें
+                </button>
         </div>
-        
+
         <div class="progress" id="progress">
             <div class="progress-bar" id="progressBar">0%</div>
         </div>
-        
+
         <div class="status" id="status"></div>
-        
+
         <div class="result" id="result">
             <h2>🎉 Result</h2>
             <img id="resultImage" style="display:none;">
@@ -239,33 +258,42 @@
             <button class="btn" id="downloadBtn" onclick="downloadResult()">⬇️ Download</button>
         </div>
     </div>
-    
+
     <script>
         let sessionId = null;
         let sourceFile = null;
         let targetFile = null;
         let resultUrl = null;
         let resultFilename = null;
-        
+        let sourceExtracted = false;
+        let targetExtracted = false;
+
+        const uploadBtn = document.getElementById('uploadBtn');
+        const processBtn = document.getElementById('processBtn');
+        const instantSwapBtn = document.getElementById('instantSwapBtn');
+        const trainBtn = document.getElementById('trainBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const statusDiv = document.getElementById('status');
+
         document.getElementById('sourceFile').addEventListener('change', function(e) {
             sourceFile = e.target.files[0];
             previewFile(sourceFile, 'source');
             checkUploadReady();
         });
-        
+
         document.getElementById('targetFile').addEventListener('change', function(e) {
             targetFile = e.target.files[0];
             previewFile(targetFile, 'target');
             checkUploadReady();
         });
-        
+
         function previewFile(file, type) {
             const reader = new FileReader();
             const isVideo = file.type.startsWith('video/');
             const imgEl = document.getElementById(type + 'Preview');
             const videoEl = document.getElementById(type + 'VideoPreview');
             const infoEl = document.getElementById(type + 'Info');
-            
+
             reader.onload = function(e) {
                 if (isVideo) {
                     videoEl.src = e.target.result;
@@ -277,59 +305,111 @@
                     videoEl.classList.remove('show');
                 }
             };
-            
+
             reader.readAsDataURL(file);
-            
+
             const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
             infoEl.textContent = `${file.name} (${sizeMB} MB)`;
             infoEl.classList.add('show');
         }
-        
+
         function checkUploadReady() {
-            const uploadBtn = document.getElementById('uploadBtn');
             if (sourceFile && targetFile) {
                 uploadBtn.disabled = false;
             }
         }
-        
+
         async function uploadFiles() {
             const formData = new FormData();
             formData.append('source', sourceFile);
             formData.append('target', targetFile);
-            
+
             showProgress('Uploading files...');
-            
+            uploadBtn.disabled = true;
+
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     sessionId = data.session_id;
                     showStatus('Files uploaded successfully! ✅', 'success');
-                    document.getElementById('processBtn').disabled = false;
+                    processBtn.disabled = false;
                     hideProgress();
                 } else {
                     showStatus('Error: ' + data.error, 'error');
                     hideProgress();
+                    uploadBtn.disabled = false;
                 }
             } catch (error) {
                 showStatus('Upload failed: ' + error.message, 'error');
                 hideProgress();
+                uploadBtn.disabled = false;
             }
         }
-        
+
+        instantSwapBtn.addEventListener('click', async () => {
+            if (!sessionId) {
+                showStatus('Please upload files first', 'error');
+                return;
+            }
+
+            instantSwapBtn.disabled = true;
+            showStatus('Instant face swapping in progress... Please wait', 'info');
+
+            try {
+                const response = await fetch('/instant_swap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        session_id: sessionId,
+                        blend_strength: 0.85
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('✓ Face swap successful! Download the result', 'success');
+
+                    // Create download link
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.output_url;
+                    downloadLink.download = data.filename;
+                    downloadLink.textContent = '📥 Download Result';
+                    downloadLink.className = 'btn'; // Use btn class for styling
+
+                    statusDiv.appendChild(document.createElement('br'));
+                    statusDiv.appendChild(downloadLink);
+                } else {
+                    showStatus('Error: ' + (data.details || data.error), 'error');
+                    instantSwapBtn.disabled = false;
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+                instantSwapBtn.disabled = false;
+            }
+        });
+
+        trainBtn.addEventListener('click', async () => {
+            if (!sessionId) {
+                showStatus('Please upload files first', 'error');
+                return;
+            }
+        });
+
         async function processSwap() {
             if (!sessionId) {
                 showStatus('Please upload files first', 'error');
                 return;
             }
-            
-            showProgress('Processing... यह कुछ समय ले सकता है');
-            
+
+            showProgress('Processing... This may take a while');
+
             try {
                 // Extract faces from source
                 updateProgress(20, 'Extracting source faces... (may take 5-10 minutes for AI models to download)');
@@ -342,7 +422,8 @@
                 if (!extractData.success) {
                     throw new Error(`Source extraction failed: ${extractData.error}`);
                 }
-                
+                sourceExtracted = true;
+
                 // Extract faces from target
                 updateProgress(40, 'Extracting target faces...');
                 extractResp = await fetch('/extract', {
@@ -354,7 +435,8 @@
                 if (!extractData.success) {
                     throw new Error(`Target extraction failed: ${extractData.error}`);
                 }
-                
+                targetExtracted = true;
+
                 // Train model
                 updateProgress(60, 'Training model...');
                 await fetch('/train', {
@@ -362,22 +444,22 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({session_id: sessionId, iterations: 5000})
                 });
-                
+
                 // Wait for training to complete
                 let trainingComplete = false;
                 let waitTime = 0;
                 const maxWaitTime = 7200000; // 2 hours max
                 const checkInterval = 5000; // Check every 5 seconds
-                
+
                 updateProgress(65, 'Training in progress... (may take 10-30 minutes on CPU)');
-                
+
                 while (!trainingComplete && waitTime < maxWaitTime) {
                     await new Promise(resolve => setTimeout(resolve, checkInterval));
                     waitTime += checkInterval;
-                    
+
                     const statusResp = await fetch(`/training_status/${sessionId}`);
                     const statusData = await statusResp.json();
-                    
+
                     if (statusData.status === 'completed') {
                         trainingComplete = true;
                         updateProgress(75, 'Training completed!');
@@ -388,11 +470,11 @@
                         updateProgress(Math.floor(progress), `Training in progress... ${Math.floor(waitTime/1000)}s elapsed`);
                     }
                 }
-                
+
                 if (!trainingComplete) {
                     throw new Error('Training timed out');
                 }
-                
+
                 // Convert
                 updateProgress(80, 'Converting faces...');
                 const convertResponse = await fetch('/convert', {
@@ -400,9 +482,9 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({session_id: sessionId})
                 });
-                
+
                 const convertData = await convertResponse.json();
-                
+
                 if (convertData.success) {
                     updateProgress(100, 'Complete! 🎉');
                     resultUrl = convertData.output_url;
@@ -418,11 +500,11 @@
                 hideProgress();
             }
         }
-        
+
         function showResult(url, filename) {
             const resultDiv = document.getElementById('result');
             const isVideo = filename.match(/\.(mp4|avi|mov|mkv)$/i);
-            
+
             if (isVideo) {
                 const videoEl = document.getElementById('resultVideo');
                 videoEl.src = url;
@@ -434,16 +516,16 @@
                 imgEl.style.display = 'block';
                 document.getElementById('resultVideo').style.display = 'none';
             }
-            
+
             resultDiv.style.display = 'block';
         }
-        
+
         function downloadResult() {
             if (resultUrl) {
                 window.location.href = resultUrl;
             }
         }
-        
+
         function showProgress(text) {
             const progress = document.getElementById('progress');
             const progressBar = document.getElementById('progressBar');
@@ -451,25 +533,25 @@
             progressBar.style.width = '0%';
             progressBar.textContent = text;
         }
-        
+
         function updateProgress(percent, text) {
             const progressBar = document.getElementById('progressBar');
             progressBar.style.width = percent + '%';
             progressBar.textContent = text || (percent + '%');
         }
-        
+
         function hideProgress() {
             setTimeout(() => {
                 document.getElementById('progress').style.display = 'none';
             }, 1000);
         }
-        
+
         function showStatus(message, type) {
             const status = document.getElementById('status');
             status.textContent = message;
             status.className = 'status ' + type;
             status.style.display = 'block';
-            
+
             setTimeout(() => {
                 status.style.display = 'none';
             }, 5000);
