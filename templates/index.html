@@ -320,6 +320,22 @@
         }
 
         async function uploadFiles() {
+            sourceExtracted = false;
+            targetExtracted = false;
+            sessionId = null;
+            resultUrl = null;
+            resultFilename = null;
+            
+            instantSwapBtn.disabled = true;
+            trainBtn.disabled = true;
+            convertBtn.disabled = true;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'none';
+            
             const formData = new FormData();
             formData.append('source', sourceFile);
             formData.append('target', targetFile);
@@ -367,7 +383,8 @@
                     throw new Error(`Source extraction failed: ${extractData.details || extractData.error}`);
                 }
                 sourceExtracted = true;
-                showStatus(`✓ Source: ${extractData.face_count} faces detected`, 'success');
+                const sourceFaces = extractData.faces_extracted || 0;
+                showStatus(`✓ Source: ${sourceFaces} faces detected`, 'success');
 
                 updateProgress(60, 'Extracting target faces...');
                 extractResp = await fetch('/extract', {
@@ -380,9 +397,10 @@
                     throw new Error(`Target extraction failed: ${extractData.details || extractData.error}`);
                 }
                 targetExtracted = true;
+                const targetFaces = extractData.faces_extracted || 0;
 
                 updateProgress(100, 'Face extraction complete! ✅');
-                showStatus(`✓ Faces extracted! Source: ${extractData.source_count || 'N/A'} faces, Target: ${extractData.face_count} faces. अब "मॉडल ट्रेन करें" पर क्लिक करें!`, 'success');
+                showStatus(`✓ Faces extracted! Source: ${sourceFaces} faces, Target: ${targetFaces} faces. अब "मॉडल ट्रेन करें" पर क्लिक करें!`, 'success');
                 trainBtn.disabled = false;
                 hideProgress();
             } catch (error) {
