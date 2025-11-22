@@ -151,32 +151,9 @@ class EthicalDatasetBuilder:
 def main():
     """Main execution"""
     print("\n" + "=" * 60)
-    print("⚠️  ETHICAL AI USAGE WARNING ⚠️")
+    print("FACESWAP TRAINING PIPELINE")
     print("=" * 60)
-    print("""
-यह tool केवल ethical और legal उद्देश्यों के लिए है:
-
-✓ अपनी खुद की photos/videos
-✓ जिनकी आपके पास permission है
-✓ Public datasets (proper attribution के साथ)
-
-❌ बिना permission के किसी की भी photos
-❌ Unauthorized content scraping
-❌ Privacy violation
-❌ Deepfakes for harassment/fraud
-
-Continue करने से पहले, confirm करें कि आप:
-1. Ethical guidelines follow करेंगे
-2. सभी applicable laws का पालन करेंगे
-3. Consent के साथ data का उपयोग करेंगे
-    """)
-    
-    response = input("\nक्या आप इन guidelines से सहमत हैं? (yes/no): ").strip().lower()
-    
-    if response != 'yes':
-        print("\n❌ Pipeline cancelled.")
-        print("कृपया ethical guidelines review करें और फिर try करें।")
-        return
+    print("\nNote: Use only images you have permission to use.\n")
     
     builder = EthicalDatasetBuilder()
     builder.run_pipeline()
