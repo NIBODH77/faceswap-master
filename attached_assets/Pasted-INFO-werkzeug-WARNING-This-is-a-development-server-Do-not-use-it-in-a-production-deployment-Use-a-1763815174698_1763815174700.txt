@@ -1,0 +1,19 @@
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.13:5000
+INFO:werkzeug:Press CTRL+C to quit
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 156-530-847
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:42:21] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:42:38] "POST /upload HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/source_faces -o uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/source_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:43:06] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/target_faces -o uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/target_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:43:30] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/source_faces -B uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/target_faces -m models/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3 -t original -bs 16 -it 5000 -s 100 -ss 1000 -ps 100
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:43:30] "POST /train HTTP/1.1" 200 -
+INFO:__main__:Running conversion: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py convert -i uploads/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3/target_faces -o outputs/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3 -m models/cf3184b1-ee79-4cb7-a6cc-db6b2594b4d3 -c avg-color -M extended -w opencv
+ERROR:__main__:Conversion failed: 
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:44:02] "POST /convert HTTP/1.1" 500 -

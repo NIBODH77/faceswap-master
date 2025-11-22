@@ -332,22 +332,30 @@
             
             try {
                 // Extract faces from source
-                updateProgress(20, 'Extracting source faces...');
-                await fetch('/extract', {
+                updateProgress(20, 'Extracting source faces... (may take 5-10 minutes for AI models to download)');
+                let extractResp = await fetch('/extract', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({session_id: sessionId, file_type: 'source'})
                 });
+                let extractData = await extractResp.json();
+                if (!extractData.success) {
+                    throw new Error(`Source extraction failed: ${extractData.error}`);
+                }
                 
                 // Extract faces from target
                 updateProgress(40, 'Extracting target faces...');
-                await fetch('/extract', {
+                extractResp = await fetch('/extract', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({session_id: sessionId, file_type: 'target'})
                 });
+                extractData = await extractResp.json();
+                if (!extractData.success) {
+                    throw new Error(`Target extraction failed: ${extractData.error}`);
+                }
                 
-                // Train model (quick training)
+                // Train model
                 updateProgress(60, 'Training model...');
                 await fetch('/train', {
                     method: 'POST',
@@ -355,8 +363,35 @@
                     body: JSON.stringify({session_id: sessionId, iterations: 5000})
                 });
                 
-                // Wait a bit for training
-                await new Promise(resolve => setTimeout(resolve, 30000));
+                // Wait for training to complete
+                let trainingComplete = false;
+                let waitTime = 0;
+                const maxWaitTime = 7200000; // 2 hours max
+                const checkInterval = 5000; // Check every 5 seconds
+                
+                updateProgress(65, 'Training in progress... (may take 10-30 minutes on CPU)');
+                
+                while (!trainingComplete && waitTime < maxWaitTime) {
+                    await new Promise(resolve => setTimeout(resolve, checkInterval));
+                    waitTime += checkInterval;
+                    
+                    const statusResp = await fetch(`/training_status/${sessionId}`);
+                    const statusData = await statusResp.json();
+                    
+                    if (statusData.status === 'completed') {
+                        trainingComplete = true;
+                        updateProgress(75, 'Training completed!');
+                    } else if (statusData.status === 'failed') {
+                        throw new Error(`Training failed: ${statusData.error || 'Unknown error'}`);
+                    } else {
+                        const progress = 60 + (Math.min(waitTime / maxWaitTime, 0.35) * 15);
+                        updateProgress(Math.floor(progress), `Training in progress... ${Math.floor(waitTime/1000)}s elapsed`);
+                    }
+                }
+                
+                if (!trainingComplete) {
+                    throw new Error('Training timed out');
+                }
                 
                 // Convert
                 updateProgress(80, 'Converting faces...');

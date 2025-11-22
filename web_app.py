@@ -144,12 +144,14 @@ def extract_faces():
         ]
         
         logger.info(f"Running extraction: {' '.join(cmd)}")
-        # Capture both stdout and stderr
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        # Capture both stdout and stderr. Extraction can take time (downloading models, processing)
+        # First run might take 10+ minutes for model downloads
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout or "Unknown extraction error"
             logger.error(f"Extraction failed: {error_msg}")
+            logger.error(f"Full output: {result.stdout}")
             return jsonify({'error': 'Extraction failed', 'details': error_msg}), 500
         
         # Count extracted faces
@@ -177,33 +179,20 @@ def run_training_background(session_id, cmd):
         training_sessions[session_id] = {'status': 'training', 'progress': 0}
         logger.info(f"Starting training: {' '.join(cmd)}")
         
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        # Training can take significant time - use long timeout
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
         
-        # Monitor training output
-        for line in process.stdout:
-            logger.info(f"Training: {line.strip()}")
-            # Update progress based on output
-            if '[' in line and ']' in line:
-                try:
-                    # Extract iteration progress
-                    parts = line.split('[')[1].split(']')[0].split('/')
-                    if len(parts) == 2:
-                        current = int(parts[0].strip())
-                        total = int(parts[1].strip())
-                        progress = int((current / total) * 100)
-                        training_sessions[session_id]['progress'] = progress
-                except:
-                    pass
-        
-        process.wait()
-        
-        if process.returncode == 0:
+        if result.returncode == 0:
             training_sessions[session_id] = {'status': 'completed', 'progress': 100}
             logger.info(f"Training completed for session {session_id}")
         else:
-            training_sessions[session_id] = {'status': 'failed', 'progress': 0}
-            logger.error(f"Training failed for session {session_id}")
+            error_msg = result.stderr or result.stdout or "Unknown training error"
+            logger.error(f"Training failed for session {session_id}: {error_msg}")
+            training_sessions[session_id] = {'status': 'failed', 'progress': 0, 'error': error_msg}
             
+    except subprocess.TimeoutExpired:
+        logger.error(f"Training timed out for session {session_id}")
+        training_sessions[session_id] = {'status': 'failed', 'progress': 0, 'error': 'Training timed out'}
     except Exception as e:
         logger.error(f"Training background error: {str(e)}")
         training_sessions[session_id] = {'status': 'failed', 'progress': 0, 'error': str(e)}
@@ -321,8 +310,8 @@ def convert_faces():
         ]
         
         logger.info(f"Running conversion: {' '.join(cmd)}")
-        # Capture both stdout and stderr
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        # Capture both stdout and stderr. Conversion can take time depending on media size
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout or "Unknown conversion error"
