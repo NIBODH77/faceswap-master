@@ -1,0 +1,28 @@
+(venv310) nibodh@nibodh-MacBookPro10-1:~/Documents/faceswap-master$ python web_app.py
+ * Serving Flask app 'web_app'
+ * Debug mode: off
+INFO:__main__:Extracting faces from source file: uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg (size: 299677 bytes)
+INFO:__main__:Running extraction command: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_temp_input -o uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_faces -D s3fd -A fan
+INFO:__main__:Successfully extracted 1 faces from source
+INFO:__main__:Extracting faces from target file: uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/target_WhatsApp_Image_2025-11-22_at_5.26.13_PM.jpeg (size: 77327 bytes)
+INFO:__main__:Running extraction command: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/target_temp_input -o uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/target_faces -D s3fd -A fan
+INFO:__main__:Successfully extracted 1 faces from target
+INFO:__main__:Starting training with 1 source faces and 1 target faces
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_faces -B uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/target_faces -m models/51c28cc5-b4a6-46f2-84d4-8bba535ae155 -t original -b 16 -it 5000 -s 100 -ss 1000 -ps 100
+ERROR:__main__:Training failed for session 51c28cc5-b4a6-46f2-84d4-8bba535ae155: Setting Faceswap backend to CPU
+11/22/2025 22:08:34 INFO     Log level set to: INFO
+11/22/2025 22:08:36 WARNING  Command line option '-it' has been deprecated and will be removed from a future update. Use '-i, --iterations' instead
+11/22/2025 22:08:36 WARNING  Command line option '-ss' has been deprecated and will be removed from a future update. Use '-I, --snapshot-interval' instead
+11/22/2025 22:08:37 ERROR    Got Exception on main handler:
+Traceback (most recent call last):
+  File "/home/nibodh/Documents/faceswap-master/lib/cli/launcher.py", line 224, in execute_script
+    process = script(arguments)
+  File "/home/nibodh/Documents/faceswap-master/scripts/train.py", line 51, in __init__
+    self._args = handle_deprecated_cliopts(arguments)
+  File "/home/nibodh/Documents/faceswap-master/lib/utils.py", line 460, in handle_deprecated_cliopts
+    exist = getattr(arguments, opt)
+AttributeError: 'Namespace' object has no attribute 'snapshot-interval'
+11/22/2025 22:08:37 CRITICAL An unexpected crash has occurred. Crash report written to '/home/nibodh/Documents/faceswap-master/crash_report.2025.11.22.220836992979.log'. You MUST provide this file if seeking assistance. Please verify you are running the latest version of faceswap before reporting
+
+INFO:__main__:Extracting faces from source file: uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg (size: 299677 bytes)
+INFO:__main__:Running extraction command: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_temp_input -o uploads/51c28cc5-b4a6-46f2-84d4-8bba535ae155/source_faces -D s3fd -A fan
