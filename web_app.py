@@ -533,4 +533,10 @@ def cleanup_session(session_id):
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    import warnings
+    warnings.filterwarnings('ignore', message='This is a development server')
+    
+    # Set werkzeug logger to ERROR level to suppress warnings
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    
+    app.run(host='0.0.0.0', port=5000, debug=False)
