@@ -7,12 +7,16 @@ Allows users to upload images/videos and perform face swaps through a browser in
 import os
 import sys
 import logging
+import time
+import json
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_file, url_for
 from werkzeug.utils import secure_filename
 import subprocess
 import uuid
 import shutil
+import glob
+import threading
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +32,9 @@ app.config['MODELS_FOLDER'] = 'models'
 # Allowed extensions
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
+
+# Training status tracker
+training_sessions = {}
 
 # Create necessary folders
 for folder in [app.config['UPLOAD_FOLDER'], app.config['OUTPUT_FOLDER'], app.config['MODELS_FOLDER']]:
@@ -116,7 +123,6 @@ def extract_faces():
         os.makedirs(output_dir, exist_ok=True)
         
         # Find the actual file
-        import glob
         files = glob.glob(input_file)
         if not files:
             return jsonify({'error': 'File not found'}), 404
@@ -124,8 +130,6 @@ def extract_faces():
         input_file = files[0]
         
         # Run extraction
-        # Note: bisenet-fp mask will be stored as bisenet-fp_face or bisenet-fp_head
-        # depending on the mask configuration (include_hair setting)
         cmd = [
             sys.executable, 'faceswap.py', 'extract',
             '-i', input_file,
@@ -136,14 +140,19 @@ def extract_faces():
         ]
         
         logger.info(f"Running extraction: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Capture both stdout and stderr
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         
         if result.returncode != 0:
-            logger.error(f"Extraction failed: {result.stderr}")
-            return jsonify({'error': 'Extraction failed', 'details': result.stderr}), 500
+            error_msg = result.stderr or result.stdout or "Unknown extraction error"
+            logger.error(f"Extraction failed: {error_msg}")
+            return jsonify({'error': 'Extraction failed', 'details': error_msg}), 500
         
         # Count extracted faces
-        face_count = len(os.listdir(output_dir))
+        try:
+            face_count = len([f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
+        except:
+            face_count = 0
         
         return jsonify({
             'success': True,
@@ -151,9 +160,49 @@ def extract_faces():
             'output_dir': output_dir
         })
     
+    except subprocess.TimeoutExpired:
+        logger.error("Extraction timed out")
+        return jsonify({'error': 'Extraction timed out'}), 500
     except Exception as e:
         logger.error(f"Extraction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+def run_training_background(session_id, cmd):
+    """Run training in background and update status"""
+    try:
+        training_sessions[session_id] = {'status': 'training', 'progress': 0}
+        logger.info(f"Starting training: {' '.join(cmd)}")
+        
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        # Monitor training output
+        for line in process.stdout:
+            logger.info(f"Training: {line.strip()}")
+            # Update progress based on output
+            if '[' in line and ']' in line:
+                try:
+                    # Extract iteration progress
+                    parts = line.split('[')[1].split(']')[0].split('/')
+                    if len(parts) == 2:
+                        current = int(parts[0].strip())
+                        total = int(parts[1].strip())
+                        progress = int((current / total) * 100)
+                        training_sessions[session_id]['progress'] = progress
+                except:
+                    pass
+        
+        process.wait()
+        
+        if process.returncode == 0:
+            training_sessions[session_id] = {'status': 'completed', 'progress': 100}
+            logger.info(f"Training completed for session {session_id}")
+        else:
+            training_sessions[session_id] = {'status': 'failed', 'progress': 0}
+            logger.error(f"Training failed for session {session_id}")
+            
+    except Exception as e:
+        logger.error(f"Training background error: {str(e)}")
+        training_sessions[session_id] = {'status': 'failed', 'progress': 0, 'error': str(e)}
 
 @app.route('/train', methods=['POST'])
 def train_model():
@@ -161,7 +210,7 @@ def train_model():
     try:
         data = request.json
         session_id = data.get('session_id')
-        iterations = data.get('iterations', 10000)
+        iterations = data.get('iterations', 5000)
         
         if not session_id:
             return jsonify({'error': 'Session ID required'}), 400
@@ -177,7 +226,7 @@ def train_model():
         
         os.makedirs(model_dir, exist_ok=True)
         
-        # Run training (use preview mode for quick results)
+        # Run training
         cmd = [
             sys.executable, 'faceswap.py', 'train',
             '-A', source_faces,
@@ -191,10 +240,10 @@ def train_model():
             '-ps', '100'
         ]
         
-        logger.info(f"Starting training: {' '.join(cmd)}")
-        
-        # Start training in background
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Start training in background thread
+        thread = threading.Thread(target=run_training_background, args=(session_id, cmd))
+        thread.daemon = True
+        thread.start()
         
         return jsonify({
             'success': True,
@@ -207,6 +256,12 @@ def train_model():
         logger.error(f"Training error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/training_status/<session_id>', methods=['GET'])
+def training_status(session_id):
+    """Check training status"""
+    status = training_sessions.get(session_id, {'status': 'not_found', 'progress': 0})
+    return jsonify(status)
+
 @app.route('/convert', methods=['POST'])
 def convert_faces():
     """Convert faces using trained model"""
@@ -217,23 +272,33 @@ def convert_faces():
         if not session_id:
             return jsonify({'error': 'Session ID required'}), 400
         
+        # Check if training is complete
+        training_status_data = training_sessions.get(session_id, {})
+        if training_status_data.get('status') != 'completed':
+            current_status = training_status_data.get('status', 'not_started')
+            return jsonify({
+                'error': f'Training not completed. Current status: {current_status}. Please wait for training to complete.'
+            }), 400
+        
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
         model_dir = os.path.join(app.config['MODELS_FOLDER'], session_id)
         output_dir = os.path.join(app.config['OUTPUT_FOLDER'], session_id)
         
+        # Check if model exists
+        model_files = glob.glob(os.path.join(model_dir, '*.h5'))
+        if not model_files:
+            return jsonify({'error': 'Model file not found. Training may not have completed successfully.'}), 404
+        
         os.makedirs(output_dir, exist_ok=True)
         
         # Find target file
-        import glob
         target_files = glob.glob(os.path.join(session_dir, 'target_*'))
         if not target_files:
             return jsonify({'error': 'Target file not found'}), 404
         
-        target_file = target_files[0]
+        target_file = [f for f in target_files if not f.endswith('_faces')][0]
         
         # Run conversion
-        # Use 'extended' mask as it's always available and works well
-        # Alternative: use 'bisenet-fp_face' if you're sure the mask was generated with face centering
         cmd = [
             sys.executable, 'faceswap.py', 'convert',
             '-i', target_file,
@@ -245,16 +310,18 @@ def convert_faces():
         ]
         
         logger.info(f"Running conversion: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Capture both stdout and stderr
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         
         if result.returncode != 0:
-            logger.error(f"Conversion failed: {result.stderr}")
-            return jsonify({'error': 'Conversion failed', 'details': result.stderr}), 500
+            error_msg = result.stderr or result.stdout or "Unknown conversion error"
+            logger.error(f"Conversion failed: {error_msg}")
+            return jsonify({'error': 'Conversion failed', 'details': error_msg}), 500
         
         # Find output file
-        output_files = os.listdir(output_dir)
+        output_files = [f for f in os.listdir(output_dir) if not f.startswith('.')]
         if not output_files:
-            return jsonify({'error': 'No output generated'}), 500
+            return jsonify({'error': 'No output generated. Check if target image contains faces.'}), 500
         
         output_file = output_files[0]
         
@@ -264,6 +331,9 @@ def convert_faces():
             'filename': output_file
         })
     
+    except subprocess.TimeoutExpired:
+        logger.error("Conversion timed out")
+        return jsonify({'error': 'Conversion timed out'}), 500
     except Exception as e:
         logger.error(f"Conversion error: {str(e)}")
         return jsonify({'error': str(e)}), 500
