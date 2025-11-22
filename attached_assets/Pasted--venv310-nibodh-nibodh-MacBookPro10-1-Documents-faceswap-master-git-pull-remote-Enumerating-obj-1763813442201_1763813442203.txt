@@ -1,0 +1,35 @@
+(venv310) nibodh@nibodh-MacBookPro10-1:~/Documents/faceswap-master$ git pull
+remote: Enumerating objects: 10, done.
+remote: Counting objects: 100% (10/10), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 7 (delta 4), reused 7 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (7/7), 5.37 KiB | 2.68 MiB/s, done.
+From https://github.com/NIBODH77/faceswap-master
+   f4bb184..a9b9083  main       -> origin/main
+Updating f4bb184..a9b9083
+Fast-forward
+ ...ts-faceswap-master-python-web-app-py-Serving-Fla-1763813268359_1763813268361.txt | 225 ++++++++++++++++++++++++++++++++++++++++
+ web_app.py                                                                          |   2 +-
+ 2 files changed, 226 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted--venv310-nibodh-nibodh-MacBookPro10-1-Documents-faceswap-master-python-web-app-py-Serving-Fla-1763813268359_1763813268361.txt
+(venv310) nibodh@nibodh-MacBookPro10-1:~/Documents/faceswap-master$ python web_app.py
+ * Serving Flask app 'web_app'
+ * Debug mode: on
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.13:5000
+INFO:werkzeug:Press CTRL+C to quit
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 156-530-847
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:38:52] "POST /upload HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/source_faces -o uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/source_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:39:18] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/target_faces -o uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/target_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:39:45] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/source_faces -B uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/target_faces -m models/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c -t original -bs 16 -it 5000 -s 100 -ss 1000 -ps 100
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:39:45] "POST /train HTTP/1.1" 200 -
+INFO:__main__:Running conversion: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py convert -i uploads/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c/target_faces -o outputs/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c -m models/fcb224c2-0bf4-488b-8990-3dfb12cf6d5c -c avg-color -M bisenet-fp_face -w opencv
+ERROR:__main__:Conversion failed: 
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:40:17] "POST /convert HTTP/1.1" 500 -
