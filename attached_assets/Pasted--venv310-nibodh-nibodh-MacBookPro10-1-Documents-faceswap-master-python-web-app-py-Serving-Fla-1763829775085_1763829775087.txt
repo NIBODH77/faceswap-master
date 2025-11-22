@@ -1,0 +1,18 @@
+(venv310) nibodh@nibodh-MacBookPro10-1:~/Documents/faceswap-master$ python web_app.py
+ * Serving Flask app 'web_app'
+ * Debug mode: off
+INFO:__main__:Extracting faces from source file: uploads/fce756f1-2653-477d-b554-7644f1cbac4e/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg (size: 299677 bytes)
+INFO:__main__:Running extraction command: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/fce756f1-2653-477d-b554-7644f1cbac4e/source_temp_input -o uploads/fce756f1-2653-477d-b554-7644f1cbac4e/source_faces -D s3fd -A fan
+INFO:__main__:Successfully extracted 1 faces from source
+INFO:__main__:Extracting faces from target file: uploads/fce756f1-2653-477d-b554-7644f1cbac4e/target_WhatsApp_Image_2025-11-22_at_5.26.13_PM.jpeg (size: 77327 bytes)
+INFO:__main__:Running extraction command: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/fce756f1-2653-477d-b554-7644f1cbac4e/target_temp_input -o uploads/fce756f1-2653-477d-b554-7644f1cbac4e/target_faces -D s3fd -A fan
+INFO:__main__:Successfully extracted 1 faces from target
+INFO:__main__:Starting training with 1 source faces and 1 target faces
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/fce756f1-2653-477d-b554-7644f1cbac4e/source_faces -B uploads/fce756f1-2653-477d-b554-7644f1cbac4e/target_faces -m models/fce756f1-2653-477d-b554-7644f1cbac4e -t original -b 16 -i 5000 -s 100 -I 1000 -ps 100
+ERROR:__main__:Training failed for session fce756f1-2653-477d-b554-7644f1cbac4e: Setting Faceswap backend to CPU
+11/22/2025 22:11:36 INFO     Log level set to: INFO
+11/22/2025 22:11:39 INFO     Model A Directory: '/home/nibodh/Documents/faceswap-master/uploads/fce756f1-2653-477d-b554-7644f1cbac4e/source_faces' (1 images)
+11/22/2025 22:11:39 INFO     Model B Directory: '/home/nibodh/Documents/faceswap-master/uploads/fce756f1-2653-477d-b554-7644f1cbac4e/target_faces' (1 images)
+11/22/2025 22:11:39 ERROR    At least one of your input folders contains fewer than 25 images.
+11/22/2025 22:11:39 ERROR    You need to provide a significant number of images to successfully train a Neural Network. Aim for between 500 - 5000 images per side.
+
