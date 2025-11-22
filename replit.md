@@ -48,21 +48,65 @@ Models download होते हैं `models/` directory में।
 ## How It Works
 
 ### Workflow
+
+**Two Options Available:**
+
+#### Option 1: Instant Swap (Quick, No Training)
 1. **Upload**: User uploads source face और target media (image/video)
-2. **Extract**: Faces automatically extract होते हैं dono files से
-3. **Train**: Model train होता है source और target faces पर (5000 iterations)
+2. **Instant Swap**: Direct face swap without training (fast but less accurate)
+3. **Download**: Result immediately available for download
+
+#### Option 2: Train & Convert (Best Quality)
+1. **Upload**: User uploads source face और target media (image/video)
+2. **Auto-Extract**: Faces automatically extract होते हैं dono files से
+   - System shows face count for both source and target
+   - Train Model button enables only after successful extraction
+3. **Train**: Model train होता है source और target faces पर (5000 iterations, ~30 seconds)
+   - Background training with live progress tracking
+   - Convert button enables only after training completes
 4. **Convert**: Trained model target media पर apply होता है
 5. **Download**: User result download कर सकते हैं
 
+**Button State Management:**
+- Upload Files: Enabled when both source and target are selected
+- Instant Swap: Enabled after successful upload
+- Train Model: Enabled after successful face extraction
+- Face Swap: Enabled only after training completes
+- Every new upload resets all states (no state leakage between sessions)
+
 ### API Endpoints
 - `POST /upload` - Upload source and target files
-- `POST /extract` - Extract faces from uploaded files
+- `POST /instant_swap` - Quick face swap without training
+- `POST /extract` - Extract faces from uploaded files (called automatically after upload)
 - `POST /train` - Train face swap model
 - `GET /training_status/<session_id>` - Check training progress
 - `POST /convert` - Convert target using trained model
 - `GET /download/<session_id>/<filename>` - Download result
 
 ## Recent Changes
+
+### Complete Workflow Implementation (Nov 22, 2025)
+Implemented full Upload → Extract → Train → Convert workflow with proper state management:
+
+**Frontend Workflow:**
+1. Auto-extraction after upload - faces extracted from both source and target automatically
+2. Button state management - Train Model button enables only after extraction completes
+3. Progress tracking - Real-time progress bars during extraction, training, and conversion
+4. Training polling - Frontend polls backend every 3 seconds for training status
+5. Convert gating - Convert button enables only after training completes successfully
+
+**State Management:**
+- All session state (flags, IDs, results) reset on new upload
+- Zero state leakage between sessions
+- Buttons strictly follow workflow sequence
+- Previous results cleared when starting new session
+
+**User Experience:**
+- Clear Hindi/English mixed messages at each step
+- Face count display after extraction
+- Progress indicators during long operations
+- Error messages with helpful details
+- Instant Swap option for quick results without training
 
 ### Replit Import Setup (Nov 22, 2025)
 1. **Python Version**: Updated to Python 3.12 for Replit compatibility
