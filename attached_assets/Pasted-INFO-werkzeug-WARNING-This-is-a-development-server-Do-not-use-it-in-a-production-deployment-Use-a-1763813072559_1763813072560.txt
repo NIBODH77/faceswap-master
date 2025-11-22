@@ -1,0 +1,21 @@
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.13:5000
+INFO:werkzeug:Press CTRL+C to quit
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 156-530-847
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:31:52] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:31:52] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:32:06] "POST /upload HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/source_faces -o uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/source_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:32:34] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/target_faces -o uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/target_faces -D s3fd -A fan -M bisenet-fp
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:32:58] "POST /extract HTTP/1.1" 200 -
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/source_faces -B uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/target_faces -m models/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e -t original -bs 16 -it 5000 -s 100 -ss 1000 -ps 100
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:32:58] "POST /train HTTP/1.1" 200 -
+INFO:__main__:Running conversion: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py convert -i uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/target_faces -o outputs/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e -m models/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e -c avg-color -M bisenet-fp_face -w opencv
+ERROR:__main__:Conversion failed: 
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 17:33:30] "POST /convert HTTP/1.1" 500 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/source_faces -o uploads/16b7b74a-4361-46d8-a6b7-7fd27dd7b75e/source_faces -D s3fd -A fan -M bisenet-fp
