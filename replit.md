@@ -25,12 +25,12 @@
 ## Technical Setup
 
 ### Python Version
-- **Required**: Python 3.10 64-bit
-- **Important**: Faceswap requires exactly Python 3.10, other versions will not work
+- **Current**: Python 3.12 64-bit
+- **Note**: Updated to work with Python 3.12 and newer TensorFlow versions for Replit compatibility
 
 ### Dependencies
 Core dependencies installed:
-- `tensorflow-cpu>=2.10.0,<2.11.0` - Deep learning framework
+- `tensorflow-cpu>=2.16.0` - Deep learning framework (updated for Python 3.12)
 - `opencv-python` - Image processing
 - `flask` - Web framework
 - `numpy<2.0.0` - Numerical computing
@@ -63,6 +63,13 @@ Models download होते हैं `models/` directory में।
 - `GET /download/<session_id>/<filename>` - Download result
 
 ## Recent Changes
+
+### Replit Import Setup (Nov 22, 2025)
+1. **Python Version**: Updated to Python 3.12 for Replit compatibility
+2. **TensorFlow**: Upgraded to tensorflow-cpu>=2.16.0 (compatible with Python 3.12)
+3. **Dependencies**: All required packages successfully installed via pip
+4. **Web Server**: Flask app running on 0.0.0.0:5000 with no errors
+5. **Gitignore**: Added comprehensive .gitignore for Python projects
 
 ### Bug Fixes (Nov 22, 2025)
 1. **Critical Fix**: Extraction bug fixed जहां output directory creation file finding से पहले हो रहा था, जिससे extraction empty folder पर run हो रहा था
