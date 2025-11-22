@@ -147,10 +147,26 @@ def extract_faces():
         output_dir = os.path.join(session_dir, f'{file_type}_faces')
         os.makedirs(output_dir, exist_ok=True)
         
-        # Run extraction - works for both images and videos
+        # Determine if input is video or image based on extension
+        file_ext = input_file.lower().split('.')[-1]
+        is_video = file_ext in ['mp4', 'avi', 'mov', 'mkv']
+        
+        # For single images, we need to use a directory as input in faceswap
+        # Create a temp directory with just this image
+        if not is_video:
+            temp_input_dir = os.path.join(session_dir, f'{file_type}_temp_input')
+            os.makedirs(temp_input_dir, exist_ok=True)
+            # Copy image to temp directory
+            temp_image_path = os.path.join(temp_input_dir, os.path.basename(input_file))
+            shutil.copy2(input_file, temp_image_path)
+            extraction_input = temp_input_dir
+        else:
+            extraction_input = input_file
+        
+        # Run extraction
         cmd = [
             sys.executable, 'faceswap.py', 'extract',
-            '-i', input_file,
+            '-i', extraction_input,
             '-o', output_dir,
             '-D', 's3fd',
             '-A', 'fan'
@@ -185,10 +201,22 @@ def extract_faces():
             face_count = 0
         
         if face_count == 0:
+            # Cleanup temp directory if it was created
+            if not is_video:
+                temp_input_dir = os.path.join(session_dir, f'{file_type}_temp_input')
+                if os.path.exists(temp_input_dir):
+                    shutil.rmtree(temp_input_dir)
+            
             return jsonify({
                 'error': 'No faces detected',
                 'details': f'No faces were found in the {file_type} file. Please ensure the image/video contains clear, visible faces.'
             }), 400
+        
+        # Cleanup temp directory if it was created
+        if not is_video:
+            temp_input_dir = os.path.join(session_dir, f'{file_type}_temp_input')
+            if os.path.exists(temp_input_dir):
+                shutil.rmtree(temp_input_dir)
         
         return jsonify({
             'success': True,
