@@ -1,0 +1,37 @@
+Questions and feedback: https://faceswap.dev/forum
+(venv310) nibodh@nibodh-MacBookPro10-1:~/Documents/faceswap-master$ python web_app.py
+ * Serving Flask app 'web_app'
+ * Debug mode: on
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.181.193:5000
+INFO:werkzeug:Press CTRL+C to quit
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 150-688-691
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 21:58:20] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 21:58:20] "GET /favicon.ico HTTP/1.1" 404 -
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 21:58:37] "POST /upload HTTP/1.1" 200 -
+INFO:__main__:Running extraction: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py extract -i uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg -o uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_faces -D s3fd -A fan
+ERROR:__main__:Extraction failed: Setting Faceswap backend to CPU
+11/22/2025 21:58:39 INFO     Log level set to: INFO
+11/22/2025 21:58:44 INFO     Loading Detect from S3Fd plugin...
+11/22/2025 21:58:44 INFO     Loading Align from Fan plugin...
+11/22/2025 21:58:44 INFO     Loading Mask from Components plugin...
+11/22/2025 21:58:44 INFO     Loading Mask from Extended plugin...
+11/22/2025 21:58:44 INFO     Starting, this may take a while...
+11/22/2025 21:58:44 INFO     Output Directory: /home/nibodh/Documents/faceswap-master/uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_faces
+11/22/2025 21:58:44 ERROR    The input file '/home/nibodh/Documents/faceswap-master/uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg' is not a valid video
+
+ERROR:__main__:Full output: Setting Faceswap backend to CPU
+11/22/2025 21:58:39 INFO     Log level set to: INFO
+11/22/2025 21:58:44 INFO     Loading Detect from S3Fd plugin...
+11/22/2025 21:58:44 INFO     Loading Align from Fan plugin...
+11/22/2025 21:58:44 INFO     Loading Mask from Components plugin...
+11/22/2025 21:58:44 INFO     Loading Mask from Extended plugin...
+11/22/2025 21:58:44 INFO     Starting, this may take a while...
+11/22/2025 21:58:44 INFO     Output Directory: /home/nibodh/Documents/faceswap-master/uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_faces
+11/22/2025 21:58:44 ERROR    The input file '/home/nibodh/Documents/faceswap-master/uploads/d681a1ee-07a1-472b-8fdd-266767329707/source_WhatsApp_Image_2025-11-22_at_5.25.07_PM.jpeg' is not a valid video
+
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 21:58:44] "POST /extract HTTP/1.1" 500 -
