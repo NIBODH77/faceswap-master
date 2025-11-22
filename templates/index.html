@@ -337,8 +337,8 @@
 
                 if (data.success) {
                     sessionId = data.session_id;
-                    showStatus('Files uploaded successfully! ✅', 'success');
-                    processBtn.disabled = false;
+                    showStatus('Files uploaded successfully! ✅ अब "तुरंत स्वैप करें" बटन पर क्लिक करें!', 'success');
+                    instantSwapBtn.disabled = false;  // Enable instant swap button
                     hideProgress();
                 } else {
                     showStatus('Error: ' + data.error, 'error');
