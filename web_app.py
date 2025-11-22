@@ -309,6 +309,17 @@ def train_model():
                 'details': 'The target faces directory is empty. Please re-extract faces from the target image/video.'
             }), 400
         
+        # Check minimum image requirement
+        MIN_IMAGES_REQUIRED = 25
+        if source_face_count < MIN_IMAGES_REQUIRED or target_face_count < MIN_IMAGES_REQUIRED:
+            return jsonify({
+                'error': 'Not enough training data',
+                'details': f'FaceSwap requires at least {MIN_IMAGES_REQUIRED} images per side for training. You have {source_face_count} source and {target_face_count} target faces. Please use videos or multiple images with more faces (ideally 500-5000 images per side).',
+                'source_count': source_face_count,
+                'target_count': target_face_count,
+                'minimum_required': MIN_IMAGES_REQUIRED
+            }), 400
+        
         logger.info(f"Starting training with {source_face_count} source faces and {target_face_count} target faces")
         
         # Check if training is already in progress
