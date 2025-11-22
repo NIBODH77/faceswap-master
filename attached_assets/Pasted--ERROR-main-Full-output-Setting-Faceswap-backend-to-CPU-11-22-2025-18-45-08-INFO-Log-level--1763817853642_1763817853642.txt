@@ -1,0 +1,30 @@
+
+ERROR:__main__:Full output: Setting Faceswap backend to CPU
+11/22/2025 18:45:08 INFO     Log level set to: INFO
+11/22/2025 18:45:09 INFO     Loading Detect from S3Fd plugin...
+11/22/2025 18:45:09 INFO     Loading Align from Fan plugin...
+11/22/2025 18:45:09 INFO     Loading Mask from Components plugin...
+11/22/2025 18:45:09 INFO     Loading Mask from Extended plugin...
+11/22/2025 18:45:09 INFO     Loading Mask from Bisenet_Fp plugin...
+11/22/2025 18:45:09 INFO     Starting, this may take a while...
+11/22/2025 18:45:09 INFO     Output Directory: /home/nibodh/Documents/faceswap-master/uploads/1eaf2bc8-c786-439b-8f41-0553b1a40695/target_faces
+11/22/2025 18:45:09 ERROR    The input file '/home/nibodh/Documents/faceswap-master/uploads/1eaf2bc8-c786-439b-8f41-0553b1a40695/target_WhatsApp_Image_2025-11-22_at_5.26.13_PM.jpeg' is not a valid video
+
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 18:45:10] "POST /extract HTTP/1.1" 500 -
+INFO:__main__:Starting training: /home/nibodh/Documents/faceswap-master/venv310/bin/python faceswap.py train -A uploads/1eaf2bc8-c786-439b-8f41-0553b1a40695/source_faces -B uploads/1eaf2bc8-c786-439b-8f41-0553b1a40695/target_faces -m models/1eaf2bc8-c786-439b-8f41-0553b1a40695 -t original -bs 16 -it 5000 -s 100 -ss 1000 -ps 100
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 18:45:10] "POST /train HTTP/1.1" 200 -
+ERROR:__main__:Training failed for session 1eaf2bc8-c786-439b-8f41-0553b1a40695: Setting Faceswap backend to CPU
+11/22/2025 18:45:10 INFO     Log level set to: INFO
+11/22/2025 18:45:12 WARNING  Command line option '-bs' has been deprecated and will be removed from a future update. Use '-b, --batch-size' instead
+11/22/2025 18:45:13 ERROR    Got Exception on main handler:
+Traceback (most recent call last):
+  File "/home/nibodh/Documents/faceswap-master/lib/cli/launcher.py", line 224, in execute_script
+    process = script(arguments)
+  File "/home/nibodh/Documents/faceswap-master/scripts/train.py", line 51, in __init__
+    self._args = handle_deprecated_cliopts(arguments)
+  File "/home/nibodh/Documents/faceswap-master/lib/utils.py", line 460, in handle_deprecated_cliopts
+    exist = getattr(arguments, opt)
+AttributeError: 'Namespace' object has no attribute 'batch-size'
+11/22/2025 18:45:13 CRITICAL An unexpected crash has occurred. Crash report written to '/home/nibodh/Documents/faceswap-master/crash_report.2025.11.22.184512659358.log'. You MUST provide this file if seeking assistance. Please verify you are running the latest version of faceswap before reporting
+
+INFO:werkzeug:127.0.0.1 - - [22/Nov/2025 18:45:40] "POST /convert HTTP/1.1" 400 -

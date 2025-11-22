@@ -107,7 +107,7 @@ def upload_files():
 
 @app.route('/extract', methods=['POST'])
 def extract_faces():
-    """Extract faces from uploaded images"""
+    """Extract faces from uploaded images or videos"""
     try:
         data = request.json
         session_id = data.get('session_id')
@@ -118,22 +118,36 @@ def extract_faces():
         
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
         
+        if not os.path.exists(session_dir):
+            return jsonify({'error': 'Session not found. Please upload files first.'}), 404
+        
         # Find the actual uploaded file (not directory) BEFORE creating output_dir
         pattern = os.path.join(session_dir, f'{file_type}_*')
         all_matches = glob.glob(pattern)
         # Filter to get only files, not directories
-        files = [f for f in all_matches if os.path.isfile(f)]
+        files = [f for f in all_matches if os.path.isfile(f) and not f.endswith('_faces')]
         
         if not files:
-            return jsonify({'error': 'File not found'}), 404
+            return jsonify({'error': f'{file_type.capitalize()} file not found. Please upload files first.'}), 404
         
         input_file = files[0]
+        
+        # Validate file exists and is readable
+        if not os.path.exists(input_file) or not os.path.isfile(input_file):
+            return jsonify({'error': f'Invalid {file_type} file path'}), 400
+        
+        # Check file size
+        file_size = os.path.getsize(input_file)
+        if file_size == 0:
+            return jsonify({'error': f'{file_type.capitalize()} file is empty'}), 400
+        
+        logger.info(f"Extracting faces from {file_type} file: {input_file} (size: {file_size} bytes)")
         
         # Now create output directory after finding the input file
         output_dir = os.path.join(session_dir, f'{file_type}_faces')
         os.makedirs(output_dir, exist_ok=True)
         
-        # Run extraction
+        # Run extraction - works for both images and videos
         cmd = [
             sys.executable, 'faceswap.py', 'extract',
             '-i', input_file,
@@ -142,35 +156,56 @@ def extract_faces():
             '-A', 'fan'
         ]
         
-        logger.info(f"Running extraction: {' '.join(cmd)}")
+        logger.info(f"Running extraction command: {' '.join(cmd)}")
         # Capture both stdout and stderr. Extraction can take time (downloading models, processing)
         # First run might take 10+ minutes for model downloads
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout or "Unknown extraction error"
-            logger.error(f"Extraction failed: {error_msg}")
+            logger.error(f"Extraction failed for {file_type}: {error_msg}")
             logger.error(f"Full output: {result.stdout}")
-            return jsonify({'error': 'Extraction failed', 'details': error_msg}), 500
+            
+            # Provide more helpful error messages
+            if "not a valid video" in error_msg.lower():
+                return jsonify({
+                    'error': 'File format issue detected',
+                    'details': 'The file may be corrupted or in an unsupported format. Please try a different image (PNG, JPG, JPEG, BMP) or video (MP4, AVI, MOV, MKV) file.'
+                }), 500
+            
+            return jsonify({'error': 'Face extraction failed', 'details': error_msg}), 500
         
         # Count extracted faces
         try:
-            face_count = len([f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
-        except:
+            face_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+            face_count = len(face_files)
+            logger.info(f"Successfully extracted {face_count} faces from {file_type}")
+        except Exception as e:
+            logger.error(f"Error counting faces: {str(e)}")
             face_count = 0
+        
+        if face_count == 0:
+            return jsonify({
+                'error': 'No faces detected',
+                'details': f'No faces were found in the {file_type} file. Please ensure the image/video contains clear, visible faces.'
+            }), 400
         
         return jsonify({
             'success': True,
             'faces_extracted': face_count,
-            'output_dir': output_dir
+            'output_dir': output_dir,
+            'message': f'Successfully extracted {face_count} face(s) from {file_type}'
         })
     
     except subprocess.TimeoutExpired:
         logger.error("Extraction timed out")
-        return jsonify({'error': 'Extraction timed out'}), 500
+        return jsonify({
+            'error': 'Extraction took too long',
+            'details': 'The extraction process timed out. This may happen with very large video files. Please try with a shorter video or smaller images.'
+        }), 500
     except Exception as e:
         logger.error(f"Extraction error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unexpected error during extraction', 'details': str(e)}), 500
 
 def run_training_background(session_id, cmd):
     """Run training in background and update status"""
@@ -208,17 +243,57 @@ def train_model():
             return jsonify({'error': 'Session ID required'}), 400
         
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
+        
+        if not os.path.exists(session_dir):
+            return jsonify({'error': 'Session not found. Please upload files first.'}), 404
+        
         model_dir = os.path.join(app.config['MODELS_FOLDER'], session_id)
         
         source_faces = os.path.join(session_dir, 'source_faces')
         target_faces = os.path.join(session_dir, 'target_faces')
         
-        if not os.path.exists(source_faces) or not os.path.exists(target_faces):
-            return jsonify({'error': 'Please extract faces first'}), 400
+        # Validate that face extraction has been completed
+        if not os.path.exists(source_faces):
+            return jsonify({
+                'error': 'Source faces not extracted',
+                'details': 'Please extract faces from the source image/video first.'
+            }), 400
+        
+        if not os.path.exists(target_faces):
+            return jsonify({
+                'error': 'Target faces not extracted',
+                'details': 'Please extract faces from the target image/video first.'
+            }), 400
+        
+        # Count faces in both directories
+        source_face_count = len([f for f in os.listdir(source_faces) if f.endswith(('.png', '.jpg', '.jpeg'))])
+        target_face_count = len([f for f in os.listdir(target_faces) if f.endswith(('.png', '.jpg', '.jpeg'))])
+        
+        if source_face_count == 0:
+            return jsonify({
+                'error': 'No source faces found',
+                'details': 'The source faces directory is empty. Please re-extract faces from the source image/video.'
+            }), 400
+        
+        if target_face_count == 0:
+            return jsonify({
+                'error': 'No target faces found',
+                'details': 'The target faces directory is empty. Please re-extract faces from the target image/video.'
+            }), 400
+        
+        logger.info(f"Starting training with {source_face_count} source faces and {target_face_count} target faces")
+        
+        # Check if training is already in progress
+        current_status = training_sessions.get(session_id, {})
+        if current_status.get('status') in ['starting', 'training']:
+            return jsonify({
+                'error': 'Training already in progress',
+                'details': 'Please wait for the current training to complete.'
+            }), 400
         
         os.makedirs(model_dir, exist_ok=True)
         
-        # Run training
+        # Run training with validated parameters
         cmd = [
             sys.executable, 'faceswap.py', 'train',
             '-A', source_faces,
@@ -242,14 +317,15 @@ def train_model():
         
         return jsonify({
             'success': True,
-            'message': 'Training started',
+            'message': f'Training started with {source_face_count} source and {target_face_count} target faces',
             'model_dir': model_dir,
-            'session_id': session_id
+            'session_id': session_id,
+            'iterations': iterations
         })
     
     except Exception as e:
         logger.error(f"Training error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unexpected error starting training', 'details': str(e)}), 500
 
 @app.route('/training_status/<session_id>', methods=['GET'])
 def training_status(session_id):
@@ -269,20 +345,49 @@ def convert_faces():
         
         # Check if training is complete
         training_status_data = training_sessions.get(session_id, {})
-        if training_status_data.get('status') != 'completed':
-            current_status = training_status_data.get('status', 'not_started')
-            return jsonify({
-                'error': f'Training not completed. Current status: {current_status}. Please wait for training to complete.'
-            }), 400
+        current_status = training_status_data.get('status', 'not_started')
+        
+        if current_status != 'completed':
+            if current_status == 'failed':
+                error_details = training_status_data.get('error', 'Unknown error')
+                return jsonify({
+                    'error': 'Training failed',
+                    'details': f'Training did not complete successfully: {error_details}'
+                }), 400
+            elif current_status in ['starting', 'training']:
+                return jsonify({
+                    'error': 'Training in progress',
+                    'details': 'Please wait for training to complete before converting.'
+                }), 400
+            else:
+                return jsonify({
+                    'error': 'Training not started',
+                    'details': 'Please train the model first before converting.'
+                }), 400
         
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
         model_dir = os.path.join(app.config['MODELS_FOLDER'], session_id)
         output_dir = os.path.join(app.config['OUTPUT_FOLDER'], session_id)
         
-        # Check if model exists
+        # Validate session directory exists
+        if not os.path.exists(session_dir):
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Check if model directory and files exist
+        if not os.path.exists(model_dir):
+            return jsonify({
+                'error': 'Model directory not found',
+                'details': 'Training may not have completed successfully. Please try training again.'
+            }), 404
+        
         model_files = glob.glob(os.path.join(model_dir, '*.h5'))
         if not model_files:
-            return jsonify({'error': 'Model file not found. Training may not have completed successfully.'}), 404
+            return jsonify({
+                'error': 'Model file not found',
+                'details': 'No trained model files (.h5) found. Training may not have completed successfully. Please check training status and try again.'
+            }), 404
+        
+        logger.info(f"Found {len(model_files)} model file(s) for session {session_id}")
         
         os.makedirs(output_dir, exist_ok=True)
         
@@ -293,9 +398,18 @@ def convert_faces():
         target_files = [f for f in all_target_matches if os.path.isfile(f) and not f.endswith('_faces')]
         
         if not target_files:
-            return jsonify({'error': 'Target file not found'}), 404
+            return jsonify({
+                'error': 'Target file not found',
+                'details': 'The target image/video file is missing. Please upload files again.'
+            }), 404
         
         target_file = target_files[0]
+        
+        # Validate target file exists and is readable
+        if not os.path.exists(target_file) or not os.path.isfile(target_file):
+            return jsonify({'error': 'Invalid target file'}), 400
+        
+        logger.info(f"Converting target file: {target_file}")
         
         # Run conversion
         cmd = [
@@ -308,34 +422,53 @@ def convert_faces():
             '-w', 'ffmpeg' if target_file.endswith(('.mp4', '.avi', '.mov', '.mkv')) else 'opencv'
         ]
         
-        logger.info(f"Running conversion: {' '.join(cmd)}")
+        logger.info(f"Running conversion command: {' '.join(cmd)}")
         # Capture both stdout and stderr. Conversion can take time depending on media size
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout or "Unknown conversion error"
             logger.error(f"Conversion failed: {error_msg}")
-            return jsonify({'error': 'Conversion failed', 'details': error_msg}), 500
+            logger.error(f"Full output: {result.stdout}")
+            return jsonify({
+                'error': 'Face conversion failed',
+                'details': error_msg
+            }), 500
+        
+        logger.info("Conversion completed successfully")
         
         # Find output file
-        output_files = [f for f in os.listdir(output_dir) if not f.startswith('.')]
+        try:
+            output_files = [f for f in os.listdir(output_dir) if not f.startswith('.') and os.path.isfile(os.path.join(output_dir, f))]
+        except Exception as e:
+            logger.error(f"Error listing output directory: {str(e)}")
+            output_files = []
+        
         if not output_files:
-            return jsonify({'error': 'No output generated. Check if target image contains faces.'}), 500
+            return jsonify({
+                'error': 'No output generated',
+                'details': 'Conversion completed but no output file was created. This may happen if no faces were detected in the target image/video.'
+            }), 500
         
         output_file = output_files[0]
+        logger.info(f"Successfully created output file: {output_file}")
         
         return jsonify({
             'success': True,
             'output_url': url_for('download_result', session_id=session_id, filename=output_file),
-            'filename': output_file
+            'filename': output_file,
+            'message': 'Face swap completed successfully!'
         })
     
     except subprocess.TimeoutExpired:
         logger.error("Conversion timed out")
-        return jsonify({'error': 'Conversion timed out'}), 500
+        return jsonify({
+            'error': 'Conversion took too long',
+            'details': 'The conversion process timed out. This may happen with very large video files. Please try with a shorter video or smaller images.'
+        }), 500
     except Exception as e:
         logger.error(f"Conversion error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unexpected error during conversion', 'details': str(e)}), 500
 
 @app.route('/download/<session_id>/<filename>')
 def download_result(session_id, filename):
