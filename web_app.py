@@ -235,8 +235,8 @@ def convert_faces():
             '-i', target_file,
             '-o', output_dir,
             '-m', model_dir,
-            '-c', 'masked',
-            '-M', 'bisenet-fp',
+            '-c', 'avg-color',
+            '-M', 'bisenet-fp_face',
             '-w', 'ffmpeg' if target_file.endswith(('.mp4', '.avi', '.mov', '.mkv')) else 'opencv'
         ]
         
