@@ -139,8 +139,7 @@ def extract_faces():
             '-i', input_file,
             '-o', output_dir,
             '-D', 's3fd',
-            '-A', 'fan',
-            '-M', 'bisenet-fp'
+            '-A', 'fan'
         ]
         
         logger.info(f"Running extraction: {' '.join(cmd)}")
@@ -226,7 +225,7 @@ def train_model():
             '-B', target_faces,
             '-m', model_dir,
             '-t', 'original',
-            '-bs', '16',
+            '-b', '16',
             '-it', str(iterations),
             '-s', '100',
             '-ss', '1000',

@@ -70,6 +70,10 @@ Models download होते हैं `models/` directory में।
 3. **Dependencies**: All required packages successfully installed via pip
 4. **Web Server**: Flask app running on 0.0.0.0:5000 with no errors
 5. **Gitignore**: Added comprehensive .gitignore for Python projects
+6. **Command Fixes**: 
+   - Removed `-M bisenet-fp` from extract command (not needed during extraction)
+   - Changed `-bs` to `-b` in train command (deprecated parameter fixed)
+   - Face swap now fully functional without errors
 
 ### Bug Fixes (Nov 22, 2025)
 1. **Critical Fix**: Extraction bug fixed जहां output directory creation file finding से पहले हो रहा था, जिससे extraction empty folder पर run हो रहा था
