@@ -4,3 +4,15 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
+
+[workflows]
+runButton = "Run Web App"
+
+[[workflows.workflow]]
+name = "Run Web App"
+author = 50049698
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python web_app.py"
