@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceSwap - Easy Face Swapping</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+        
+        .upload-box:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-5px);
+        }
+        
+        .upload-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .upload-box p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .preview.show {
+            display: block;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .result {
+            text-align: center;
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result img, .result video {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .file-info {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            color: #2e7d32;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 FaceSwap</h1>
+        <p class="subtitle">आसानी से Image और Video में Face Swap करें</p>
+        
+        <div class="upload-section">
+            <div class="upload-box" onclick="document.getElementById('sourceFile').click()">
+                <h3>📸 Source Face</h3>
+                <p>जिस Face को Swap करना है (Image/Video)</p>
+                <button class="btn">चुनें</button>
+                <input type="file" id="sourceFile" accept="image/*,video/*">
+                <div class="file-info" id="sourceInfo"></div>
+                <img id="sourcePreview" class="preview">
+                <video id="sourceVideoPreview" class="preview" controls></video>
+            </div>
+            
+            <div class="upload-box" onclick="document.getElementById('targetFile').click()">
+                <h3>🎯 Target Media</h3>
+                <p>जिस Image/Video में Face Swap करना है</p>
+                <button class="btn">चुनें</button>
+                <input type="file" id="targetFile" accept="image/*,video/*">
+                <div class="file-info" id="targetInfo"></div>
+                <img id="targetPreview" class="preview">
+                <video id="targetVideoPreview" class="preview" controls></video>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn" id="uploadBtn" onclick="uploadFiles()" disabled>📤 Upload Files</button>
+            <button class="btn" id="processBtn" onclick="processSwap()" disabled>✨ Face Swap करें</button>
+        </div>
+        
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="result" id="result">
+            <h2>🎉 Result</h2>
+            <img id="resultImage" style="display:none;">
+            <video id="resultVideo" controls style="display:none;"></video>
+            <br>
+            <button class="btn" id="downloadBtn" onclick="downloadResult()">⬇️ Download</button>
+        </div>
+    </div>
+    
+    <script>
+        let sessionId = null;
+        let sourceFile = null;
+        let targetFile = null;
+        let resultUrl = null;
+        let resultFilename = null;
+        
+        document.getElementById('sourceFile').addEventListener('change', function(e) {
+            sourceFile = e.target.files[0];
+            previewFile(sourceFile, 'source');
+            checkUploadReady();
+        });
+        
+        document.getElementById('targetFile').addEventListener('change', function(e) {
+            targetFile = e.target.files[0];
+            previewFile(targetFile, 'target');
+            checkUploadReady();
+        });
+        
+        function previewFile(file, type) {
+            const reader = new FileReader();
+            const isVideo = file.type.startsWith('video/');
+            const imgEl = document.getElementById(type + 'Preview');
+            const videoEl = document.getElementById(type + 'VideoPreview');
+            const infoEl = document.getElementById(type + 'Info');
+            
+            reader.onload = function(e) {
+                if (isVideo) {
+                    videoEl.src = e.target.result;
+                    videoEl.classList.add('show');
+                    imgEl.classList.remove('show');
+                } else {
+                    imgEl.src = e.target.result;
+                    imgEl.classList.add('show');
+                    videoEl.classList.remove('show');
+                }
+            };
+            
+            reader.readAsDataURL(file);
+            
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            infoEl.textContent = `${file.name} (${sizeMB} MB)`;
+            infoEl.classList.add('show');
+        }
+        
+        function checkUploadReady() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            if (sourceFile && targetFile) {
+                uploadBtn.disabled = false;
+            }
+        }
+        
+        async function uploadFiles() {
+            const formData = new FormData();
+            formData.append('source', sourceFile);
+            formData.append('target', targetFile);
+            
+            showProgress('Uploading files...');
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    sessionId = data.session_id;
+                    showStatus('Files uploaded successfully! ✅', 'success');
+                    document.getElementById('processBtn').disabled = false;
+                    hideProgress();
+                } else {
+                    showStatus('Error: ' + data.error, 'error');
+                    hideProgress();
+                }
+            } catch (error) {
+                showStatus('Upload failed: ' + error.message, 'error');
+                hideProgress();
+            }
+        }
+        
+        async function processSwap() {
+            if (!sessionId) {
+                showStatus('Please upload files first', 'error');
+                return;
+            }
+            
+            showProgress('Processing... यह कुछ समय ले सकता है');
+            
+            try {
+                // Extract faces from source
+                updateProgress(20, 'Extracting source faces...');
+                await fetch('/extract', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, file_type: 'source'})
+                });
+                
+                // Extract faces from target
+                updateProgress(40, 'Extracting target faces...');
+                await fetch('/extract', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, file_type: 'target'})
+                });
+                
+                // Train model (quick training)
+                updateProgress(60, 'Training model...');
+                await fetch('/train', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, iterations: 5000})
+                });
+                
+                // Wait a bit for training
+                await new Promise(resolve => setTimeout(resolve, 30000));
+                
+                // Convert
+                updateProgress(80, 'Converting faces...');
+                const convertResponse = await fetch('/convert', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+                
+                const convertData = await convertResponse.json();
+                
+                if (convertData.success) {
+                    updateProgress(100, 'Complete! 🎉');
+                    resultUrl = convertData.output_url;
+                    resultFilename = convertData.filename;
+                    showResult(resultUrl, resultFilename);
+                    hideProgress();
+                } else {
+                    showStatus('Conversion failed: ' + convertData.error, 'error');
+                    hideProgress();
+                }
+            } catch (error) {
+                showStatus('Processing failed: ' + error.message, 'error');
+                hideProgress();
+            }
+        }
+        
+        function showResult(url, filename) {
+            const resultDiv = document.getElementById('result');
+            const isVideo = filename.match(/\.(mp4|avi|mov|mkv)$/i);
+            
+            if (isVideo) {
+                const videoEl = document.getElementById('resultVideo');
+                videoEl.src = url;
+                videoEl.style.display = 'block';
+                document.getElementById('resultImage').style.display = 'none';
+            } else {
+                const imgEl = document.getElementById('resultImage');
+                imgEl.src = url;
+                imgEl.style.display = 'block';
+                document.getElementById('resultVideo').style.display = 'none';
+            }
+            
+            resultDiv.style.display = 'block';
+        }
+        
+        function downloadResult() {
+            if (resultUrl) {
+                window.location.href = resultUrl;
+            }
+        }
+        
+        function showProgress(text) {
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            progress.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = text;
+        }
+        
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = text || (percent + '%');
+        }
+        
+        function hideProgress() {
+            setTimeout(() => {
+                document.getElementById('progress').style.display = 'none';
+            }, 1000);
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
